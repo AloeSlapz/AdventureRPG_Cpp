@@ -1,0 +1,296 @@
+#include <iostream>
+#include <vector>
+#include <string>
+#include <cstdlib>
+#include <ctime>
+#include <algorithm>
+
+using namespace std;
+
+// Player attributes
+struct Player {
+    int health = 50;
+    int baseAttack = 2;
+    int silver = 0;
+    string equippedWeapon = "Rusty Sword";
+    vector<string> weapons = {"Rusty Sword"};
+    vector<string> potions = {"Potion"};
+    vector<string> specialItems;
+};
+
+// Enemy struct for combat
+struct Enemy {
+    string name;
+    int attack;
+    int health;
+};
+
+// Function prototypes
+void mainMenu(Player& player);
+void showLocations(Player& player);
+void river(Player& player);
+void forest(Player& player);
+void dungeon(Player& player);
+void town(Player& player);
+void shop(Player& player);
+void tavern(Player& player);
+void combat(Player& player, Enemy enemy, int silverMin, int silverMax, int specialDropChance, string specialLoot);
+void useItem(Player& player);
+int randomChance(int percentage);
+
+int main() {
+    srand(time(0)); // Seed random number generator
+    Player player;
+
+    cout << "Welcome to the Adventure Game!\n";
+    cout << "Press M to return to the Main Menu at any time.\n";
+
+    mainMenu(player);
+    return 0;
+}
+
+// Main Menu
+void mainMenu(Player& player) {
+    char choice;
+    while (true) {
+        cout << "\nMain Menu:\n";
+        cout << "L - List Locations\n";
+        cout << "I - View Inventory\n";
+        cout << "E - Exit Game\n";
+        cout << "Enter your choice: ";
+        cin >> choice;
+        choice = toupper(choice);
+
+        if (choice == 'L') {
+            showLocations(player);
+        } else if (choice == 'I') {
+            cout << "\nInventory:\n";
+            cout << "Weapons: ";
+            for (const auto& weapon : player.weapons) cout << weapon << " ";
+            cout << "\nPotions: ";
+            for (const auto& potion : player.potions) cout << potion << " ";
+            cout << "\nSpecial Items: ";
+            for (const auto& item : player.specialItems) cout << item << " ";
+            cout << "\nSilver: " << player.silver << "\n"; // Display updated silver
+        } else if (choice == 'E') {
+            cout << "Thanks for playing!\n";
+            break;
+        } else {
+            cout << "Invalid choice. Try again.\n";
+        }
+    }
+}
+
+// Show Locations
+void showLocations(Player& player) {
+    char choice;
+    while (true) {
+        cout << "\nLocations:\n";
+        cout << "1 - River\n";
+        cout << "2 - Forest\n";
+        cout << "3 - Dungeon\n";
+        cout << "4 - Town\n";
+        cout << "B - Back to Main Menu\n";
+        cout << "Enter your choice: ";
+        cin >> choice;
+
+        if (choice == '1') river(player);
+        else if (choice == '2') forest(player);
+        else if (choice == '3') dungeon(player);
+        else if (choice == '4') town(player);
+        else if (toupper(choice) == 'B') break;
+        else cout << "Invalid choice. Try again.\n";
+    }
+}
+
+// River
+void river(Player& player) {
+    cout << "\nYou meet an NPC by the river.\n";
+    if (!player.specialItems.empty()) {
+        cout << "The NPC accepts your special items and rewards you with experience!\n";
+        player.health += 2;
+        player.baseAttack += 2;
+        player.specialItems.clear();
+        cout << "Your health is now " << player.health << " and your base attack is " << player.baseAttack << ".\n";
+    } else {
+        cout << "The NPC has nothing to trade for now.\n";
+    }
+}
+
+// Forest
+void forest(Player& player) {
+    char choice;
+    while (true) {
+        cout << "\nYou are in the forest. What would you like to do?\n";
+        cout << "1 - Search the forest\n";
+        cout << "2 - Use Item\n";
+        cout << "B - Leave the forest\n";
+        cout << "Enter your choice: ";
+        cin >> choice;
+
+        if (choice == '1') {
+            cout << "\nYou encounter a rat!\n";
+            Enemy rat = {"Rat", 1, 5}; // Rat with 5 HP
+            combat(player, rat, 1, 3, 10, "Gold Necklace"); // Forest-specific loot
+        } else if (choice == '2') {
+            useItem(player);
+        } else if (toupper(choice) == 'B') {
+            cout << "You leave the forest and return to the locations menu.\n";
+            break;
+        } else {
+            cout << "Invalid choice. Try again.\n";
+        }
+    }
+}
+
+// Dungeon
+void dungeon(Player& player) {
+    cout << "\nYou enter the dungeon and encounter a goblin!\n";
+    Enemy goblin = {"Goblin", 5, 10}; // Goblin with 10 HP
+    combat(player, goblin, 1, 3, 10, "Silver Ring"); // Dungeon-specific loot
+}
+
+// Town
+void town(Player& player) {
+    char choice;
+    while (true) {
+        cout << "\nTown:\n";
+        cout << "1 - Shop\n";
+        cout << "2 - Tavern\n";
+        cout << "3 - Use Item\n";
+        cout << "B - Back to Locations\n";
+        cout << "Enter your choice: ";
+        cin >> choice;
+
+        if (choice == '1') shop(player);
+        else if (choice == '2') tavern(player);
+        else if (choice == '3') useItem(player);
+        else if (toupper(choice) == 'B') break;
+        else cout << "Invalid choice. Try again.\n";
+    }
+}
+
+// Shop
+void shop(Player& player) {
+    cout << "\nShop:\n";
+    cout << "Weapons for Sale:\n";
+    cout << "1 - Bronze Sword (5 Silver)\n";
+    cout << "2 - Iron Sword (10 Silver)\n";
+    cout << "3 - Mythril Sword (25 Silver)\n";
+    cout << "B - Back\n";
+    cout << "Enter your choice: ";
+    char choice;
+    cin >> choice;
+
+    if (choice == '1' && player.silver >= 5) {
+        player.weapons.push_back("Bronze Sword");
+        player.silver -= 5;
+        cout << "You purchased a Bronze Sword!\n";
+    } else if (choice == '2' && player.silver >= 10) {
+        player.weapons.push_back("Iron Sword");
+        player.silver -= 10;
+        cout << "You purchased an Iron Sword!\n";
+    } else if (choice == '3' && player.silver >= 25) {
+        player.weapons.push_back("Mythril Sword");
+        player.silver -= 25;
+        cout << "You purchased a Mythril Sword!\n";
+    } else if (toupper(choice) == 'B') {
+        return;
+    } else {
+        cout << "You don't have enough silver or entered an invalid option.\n";
+    }
+}
+
+// Tavern
+void tavern(Player& player) {
+    cout << "\nWelcome to the Tavern! You rest and recover fully.\n";
+    player.health = 50;
+    cout << "Your health is now " << player.health << ".\n";
+}
+
+// Combat
+void combat(Player& player, Enemy enemy, int silverMin, int silverMax, int specialDropChance, string specialLoot) {
+    while (player.health > 0 && enemy.health > 0) {
+        cout << "\nYou are in combat with " << enemy.name << "!\n";
+        cout << "1 - Attack\n";
+        cout << "2 - Use Item\n";
+        cout << "Enter your choice: ";
+        char choice;
+        cin >> choice;
+
+        if (choice == '1') {
+            int weaponDamage = (player.equippedWeapon == "Rusty Sword") ? 2 :
+                (player.equippedWeapon == "Bronze Sword") ? 5 :
+                (player.equippedWeapon == "Iron Sword") ? 10 :
+                25;
+            enemy.health -= (player.baseAttack + weaponDamage);
+            cout << "You dealt " << (player.baseAttack + weaponDamage) << " damage. "
+                 << enemy.name << " has " << max(0, enemy.health) << " health left.\n";
+
+            if (enemy.health > 0) {
+                cout << "The " << enemy.name << " attacks you for " << enemy.attack << " damage.\n";
+                player.health -= enemy.attack;
+                cout << "You have " << max(0, player.health) << " health left.\n";
+            }
+        } else if (choice == '2') {
+            useItem(player);
+        } else {
+            cout << "Invalid choice. You lost your turn.\n";
+        }
+
+        if (player.health <= 0) {
+            cout << "You were defeated by the " << enemy.name << "! Game over.\n";
+            exit(0);
+        }
+
+        if (enemy.health <= 0) {
+            cout << "You defeated the " << enemy.name << "!\n";
+
+            // Add silver drop
+            int silverDrop = rand() % (silverMax - silverMin + 1) + silverMin;
+            player.silver += silverDrop;
+            cout << "You found " << silverDrop << " silver! Total silver: " << player.silver << "\n";
+
+            // Add special item drop
+            if (randomChance(specialDropChance)) {
+                player.specialItems.push_back(specialLoot);
+                cout << "The " << enemy.name << " dropped a " << specialLoot << "!\n";
+            }
+
+            break;
+        }
+    }
+}
+
+// Use Item
+void useItem(Player& player) {
+    if (player.potions.empty()) {
+        cout << "You have no potions to use!\n";
+        return;
+    }
+
+    cout << "Select a potion to use:\n";
+    for (size_t i = 0; i < player.potions.size(); ++i) {
+        cout << i + 1 << " - " << player.potions[i] << "\n";
+    }
+    int choice;
+    cin >> choice;
+
+    if (choice > 0 && choice <= player.potions.size()) {
+        string potion = player.potions[choice - 1];
+        int healAmount = (potion == "Potion") ? 10 :
+                         (potion == "Super Potion") ? 20 : 0;
+        player.health += healAmount;
+        player.health = min(player.health, 50); // Cap at max health
+        cout << "You used a " << potion << " and healed for " << healAmount 
+             << " HP. Your health is now " << player.health << ".\n";
+        player.potions.erase(player.potions.begin() + (choice - 1)); // Remove used potion
+    } else {
+        cout << "Invalid choice.\n";
+    }
+}
+
+// Random Chance Generator
+int randomChance(int percentage) {
+    return rand() % 100 < percentage;
+}
